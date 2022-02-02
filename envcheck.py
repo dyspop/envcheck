@@ -1,12 +1,19 @@
 #!/bin/bash
 from time import sleep
+from os.path import isfile
 
 # Quick and dirty tool to compare two environment files for new, missing, mismatches
 # This is a devops tool to check for changes in environment variable configurations
-# This is not to inspect the runtime environment variables
+# This is not to inspect runtime environment variables
 
-env_filename = 'environment'
-env_example_filename = 'environment.example'
+# Not case-sensitive names
+common_env_names = ['env', 'environment']
+found_envs = set()
+
+# check local path to find common env files
+for common_env_name in common_env_names + [f'.{name}' for name in common_env_names]:
+  if isfile(common_env_name):
+    found_envs.add(common_env_name)
 
 def parse_env_to_dict(env_file):
   env_dict = {}
@@ -48,36 +55,57 @@ def create_env(extension, base_env, appending_env):
 
   print(f'Wrote new environment file {env_filename + extension}')
 
-current_env_dict = parse_env_to_dict(env_filename)
-example_env_dict = parse_env_to_dict(env_example_filename)
+def parse_valid_env_configuration(env_filename):
+  current_env_dict = parse_env_to_dict(env_filename)
 
-# Find shared items
-shared_items = {k: current_env_dict[k] for k in current_env_dict if k in example_env_dict and current_env_dict[k] == example_env_dict[k]}
+  example_env_dict = parse_env_to_dict(f'{env_filename}.example')
 
-# Find items in env but not in example
-old_env_items = {k: current_env_dict[k] for k in current_env_dict if k not in example_env_dict }
+  # Find shared items
+  shared_items = {k: current_env_dict[k] for k in current_env_dict if k in example_env_dict and current_env_dict[k] == example_env_dict[k]}
 
-# Find items in example but not in env
-new_env_items = {k: example_env_dict[k] for k in example_env_dict if k not in current_env_dict }
+  # Find items in env but not in example
+  old_env_items = {k: current_env_dict[k] for k in current_env_dict if k not in example_env_dict }
 
-for k, v in shared_items.items():
-  print(k, v)
+  # Find items in example but not in env
+  new_env_items = {k: example_env_dict[k] for k in example_env_dict if k not in current_env_dict }
 
-prompt_user(f'\n🔑 👍 Found {len(shared_items)} matching')
-input('\nPress enter/return to continue...\n')
+  for k, v in shared_items.items():
+    print(k, v)
 
-for k, v in old_env_items.items():
-  print(k, v)
+  prompt_user(f'\n🔑 👍 Found {len(shared_items)} matching')
+  input('\nPress enter/return to continue...\n')
 
-prompt_user(f'\n🔑 🚨 Found {len(old_env_items)} in environment but not in example')
-input('\nPress enter/return to continue...\n')
+  for k, v in old_env_items.items():
+    print(k, v)
 
-for k, v in new_env_items.items():
-  print(k, v)
+  prompt_user(f'\n🔑 🚨 Found {len(old_env_items)} in environment but not in example')
+  input('\nPress enter/return to continue...\n')
 
-prompt_user(f'\n🔑 ✅ Found {len(new_env_items)} new from example')
-if input('\nAdd new variables? [Y/n]')[0].upper() == 'Y':
-  create_env('.new', current_env_dict, new_env_items)
+  for k, v in new_env_items.items():
+    print(k, v)
+
+  prompt_user(f'\n🔑 ✅ Found {len(new_env_items)} new from example')
+  try:
+    if input('\nAdd new variables? [y/n]')[0].lower() == 'y':
+      create_env('.new', current_env_dict, new_env_items)
+    else:
+      print('Exiting...')
+  except:
+    print('Exiting...')
+
+################
+# Control flow #
+################
+if len(found_envs) >= 1:
+  print('Found environment variable file(s)')
+  for found_env in found_envs:
+    print(found_env)
+
+    # check for example files
+    if isfile(f'{found_env}.example'):
+      print(f'{found_env}.example')
+
+      # TODO: add checks for extra unmatched pairs, more than one pair etc
+      parse_valid_env_configuration(found_env)
 else:
-  print('Exiting...')
-
+  print('Found no environmet variable files')
