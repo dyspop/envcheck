@@ -93,19 +93,20 @@ def parse_valid_env_configuration(env_filename):
   except:
     print('Exiting...')
 
-################
-# Control flow #
-################
-if len(found_envs) >= 1:
-  print('Found environment variable file(s)')
-  for found_env in found_envs:
-    print(found_env)
+def main():
+  if len(found_envs) >= 1:
+    print('Found environment variable file(s)')
+    for found_env in found_envs:
+      print(found_env)
 
-    # check for example files
-    if isfile(f'{found_env}.example'):
-      print(f'{found_env}.example')
+      # check for example files
+      if isfile(f'{found_env}.example'):
+        print(f'{found_env}.example')
 
-      # TODO: add checks for extra unmatched pairs, more than one pair etc
-      parse_valid_env_configuration(found_env)
-else:
-  print('Found no environmet variable files')
+        # TODO: add checks for extra unmatched pairs, more than one pair etc
+        parse_valid_env_configuration(found_env)
+  else:
+    print('Found no environment variable files')
+
+if __name__ == "__main__":
+    main()
