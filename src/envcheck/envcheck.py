@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+# coding=utf8
+
 from time import sleep
 from os.path import isfile
 
