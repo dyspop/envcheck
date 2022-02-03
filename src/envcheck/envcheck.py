@@ -9,6 +9,7 @@ from os.path import isfile
 
 # Not case-sensitive names
 common_env_names = ['env', 'environment']
+common_env_names = common_env_names + [f'.{name}' for name in common_env_names]
 found_envs = set()
 
 # check local path to find common env files
@@ -41,7 +42,7 @@ def prompt_user(message):
   print(message)
   sleep(.4)
 
-def create_env(extension, base_env, appending_env):
+def create_env(env_filename, extension, base_env, appending_env):
   with open(env_filename + extension, 'w') as new_env:
     # Write current environment values
     for k, v in base_env.items():
@@ -57,55 +58,66 @@ def create_env(extension, base_env, appending_env):
   print(f'Wrote new environment file {env_filename + extension}')
 
 def parse_valid_env_configuration(env_filename):
-  current_env_dict = parse_env_to_dict(env_filename)
-
-  example_env_dict = parse_env_to_dict(f'{env_filename}.example')
-
-  # Find shared items
-  shared_items = {k: current_env_dict[k] for k in current_env_dict if k in example_env_dict and current_env_dict[k] == example_env_dict[k]}
-
-  # Find items in env but not in example
-  old_env_items = {k: current_env_dict[k] for k in current_env_dict if k not in example_env_dict }
-
-  # Find items in example but not in env
-  new_env_items = {k: example_env_dict[k] for k in example_env_dict if k not in current_env_dict }
-
-  for k, v in shared_items.items():
-    print(k, v)
-
-  prompt_user(f'\n🔑 👍 Found {len(shared_items)} matching')
-  input('\nPress enter/return to continue...\n')
-
-  for k, v in old_env_items.items():
-    print(k, v)
-
-  prompt_user(f'\n🔑 🚨 Found {len(old_env_items)} in environment but not in example')
-  input('\nPress enter/return to continue...\n')
-
-  for k, v in new_env_items.items():
-    print(k, v)
-
-  prompt_user(f'\n🔑 ✅ Found {len(new_env_items)} new from example')
   try:
-    if input('\nAdd new variables? [y/n]')[0].lower() == 'y':
-      create_env('.new', current_env_dict, new_env_items)
-    else:
-      print('Exiting...')
-  except:
+    current_env_dict = parse_env_to_dict(env_filename)
+    example_env_dict = parse_env_to_dict(f'{env_filename}.example')
+    print(f'\nComparing {env_filename} with {env_filename}.example')
+
+    # Find shared items
+    shared_items = {k: current_env_dict[k] for k in current_env_dict if k in example_env_dict and current_env_dict[k] == example_env_dict[k]}
+
+    # Find items in env but not in example
+    old_env_items = {k: current_env_dict[k] for k in current_env_dict if k not in example_env_dict }
+
+    # Find items in example but not in env
+    new_env_items = {k: example_env_dict[k] for k in example_env_dict if k not in current_env_dict }
+
+    for k, v in shared_items.items():
+      print(k, v)
+
+    prompt_user(f'\n🔑 👍 Found {len(shared_items)} matching')
+    input('\nPress enter/return to continue...\n')
+
+    for k, v in old_env_items.items():
+      print(k, v)
+
+    prompt_user(f'\n🔑 🚨 Found {len(old_env_items)} in environment but not in example')
+    input('\nPress enter/return to continue...\n')
+
+    for k, v in new_env_items.items():
+      print(k, v)
+
+    prompt_user(f'\n🔑 ✅ Found {len(new_env_items)} new from example')
+    if len(new_env_items) > 0:
+      try:
+        response = input('\nAdd new variables? [y/n]\n')
+        if response[0].lower() == 'y':
+          create_env(env_filename, '.new', current_env_dict, new_env_items)
+        else:
+          print('Exiting...')
+      except Exception :
+        print('Exiting...')
+    
     print('Exiting...')
+
+  except FileNotFoundError:
+    pass
 
 def main():
   if len(found_envs) >= 1:
-    print('Found environment variable file(s)')
+    print('\nFound environment variable file(s)\n')
     for found_env in found_envs:
       print(found_env)
 
+    for found_env in found_envs:
       # check for example files
       if isfile(f'{found_env}.example'):
         print(f'{found_env}.example')
 
-        # TODO: add checks for extra unmatched pairs, more than one pair etc
-        parse_valid_env_configuration(found_env)
+    for found_env in found_envs:
+      # TODO: add checks for extra unmatched pairs, more than one pair etc
+      parse_valid_env_configuration(found_env)
+
   else:
     print('Found no environment variable files')
 

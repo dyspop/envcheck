@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="envcheck",
-    version="0.0.5",
+    version="0.0.10",
     author="Dan Black",
     author_email="dyspop@gmail.com",
     description="A small, simple command line utility to check for, compare and merge environment variables between environment files and their .example counterparts",
